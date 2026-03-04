@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { startOfMonth, endOfMonth, addDays, toDateKey } from '../utils/date';
 import { db } from '../db';
 
@@ -20,11 +20,8 @@ export default function Calendar({ onOpenDay }) {
   const [month, setMonth] = useState(new Date());
   const [statuses, setStatuses] = useState({});
 
-  useEffect(() => {
-    computeStatuses();
-  }, [month]);
-
-  async function computeStatuses() {
+  // FIX: useCallback per includere computeStatuses nelle dipendenze dell'effect
+  const computeStatuses = useCallback(async () => {
     const days = buildMonthGrid(month);
     const tasks = await db.tasks.toArray();
     const occs = await db.occurrences.toArray();
@@ -50,7 +47,11 @@ export default function Calendar({ onOpenDay }) {
       map[key] = { color, completed, total, pct };
     }
     setStatuses(map);
-  }
+  }, [month]);
+
+  useEffect(() => {
+    computeStatuses();
+  }, [computeStatuses]);
 
   function prevMonth() {
     const d = new Date(month);
